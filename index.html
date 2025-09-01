@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>王不亡 - 迴響抽取</title>
+    <title>王不亡 - 迴響宇宙</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Three.js -->
@@ -37,11 +37,12 @@
         }
         #summon-altar-ring {
             width: 150px; height: 150px;
-            border: 3px solid #f59e0b;
+            border: 3px solid #777; /* 改為中性灰色 */
             border-radius: 50%;
-            box-shadow: 0 0 20px #f59e0b, inset 0 0 20px #f59e0b;
+            box-shadow: 0 0 15px #777, inset 0 0 15px #777;
             animation: rotate-altar 20s linear infinite;
             transform-style: preserve-3d;
+            transition: all 0.5s ease;
         }
         @keyframes rotate-altar {
             from { transform: rotateY(0deg) rotateX(70deg); }
@@ -53,22 +54,23 @@
             animation-duration: 0.5s;
         }
 
-        /* 歌曲卡牌 */
+        /* 歌曲卡牌 - 低飽和度顏色 */
         .song-card {
-            background: linear-gradient(45deg, #1e293b, #334155);
-            border: 1px solid rgba(255, 255, 255, 0.2);
             transform-style: preserve-3d;
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
-        .collection-card {
-            background: linear-gradient(45deg, #1e293b, #334155);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .song-card-album1 { background: linear-gradient(45deg, #283149, #404b69); border: 1px solid #526082; }
+        .song-card-album2 { background: linear-gradient(45deg, #4b3832, #854442); border: 1px solid #be9b7b; }
+
+        .collection-card { transition: transform 0.2s ease; }
+        .collection-card:hover { transform: scale(1.05); }
+        .collection-card-album1 { background: linear-gradient(45deg, #283149, #404b69); }
+        .collection-card-album2 { background: linear-gradient(45deg, #4b3832, #854442); }
         
         /* 自訂滾動條 */
         .custom-scrollbar::-webkit-scrollbar { height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
         
         /* 皇冠動畫 */
         .crown-light-modal {
@@ -88,6 +90,15 @@
     <!-- 主要 UI -->
     <main class="fixed inset-0 p-4 flex flex-col items-center justify-between h-full">
         
+        <!-- 返回主頁按鈕 -->
+        <button id="back-to-home-button"
+           class="fixed top-4 right-4 z-50 bg-black/50 backdrop-blur-sm border border-gray-600 text-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-700/70 hover:text-white transition-colors shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            </svg>
+            <span class="hidden sm:inline">返回主頁</span>
+        </button>
+
         <!-- 上方：當前播放區域 -->
         <div id="now-playing-area" class="w-full max-w-sm h-1/3 flex items-center justify-center">
              <div id="card-placeholder" class="text-center text-gray-500">
@@ -104,13 +115,13 @@
 
         <!-- 下方：控制與收藏區 -->
         <div class="w-full flex flex-col items-center gap-4">
-            <button id="summon-btn" class="w-full max-w-sm font-bold text-xl py-4 px-6 bg-amber-500 text-gray-900 rounded-lg hover:bg-amber-400 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-amber-500/30">
+            <button id="summon-btn" class="w-full max-w-sm font-bold text-xl py-4 px-6 bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-amber-500/20">
                 召喚迴響
             </button>
              <div id="collection-area" class="w-full glass-panel rounded-lg p-2">
                 <div class="flex items-center justify-center mb-2">
                     <button id="about-btn" class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                        <h3 class="text-XL font-semibold text-center">專輯資訊</h3>
+                        <h3 class="text-sm font-semibold text-center">專輯資訊</h3>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
@@ -124,41 +135,32 @@
 
         <!-- 關於專輯 Modal -->
         <div id="about-modal" class="fixed inset-0 bg-black/70 z-50 hidden items-center justify-center p-4">
-            <div class="glass-panel rounded-lg shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative">
+            <div class="glass-panel rounded-lg shadow-2xl max-w-4xl w-full p-6 sm:p-8 relative">
                 <button id="close-modal-btn" class="absolute top-3 right-4 text-gray-400 hover:text-white text-3xl">&times;</button>
-                <div class="flex flex-col md:flex-row items-center text-center md:text-left gap-6 md:gap-8">
-                    <!-- Crown Icon -->
-                    <div class="w-28 h-28 md:w-32 md:h-32 flex-shrink-0">
-                        <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <filter id="glow-modal">
-                                    <feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur>
-                                    <feMerge>
-                                        <feMergeNode in="coloredBlur"></feMergeNode>
-                                        <feMergeNode in="SourceGraphic"></feMergeNode>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            <g class="crown-light-modal" filter="url(#glow-modal)">
-                                 <path d="M 20 80 L 25 40 L 40 55 L 50 30 L 60 55 L 75 40 L 80 80 Z" fill="none" stroke="#E9D5A1" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-                            </g>
-                        </svg>
+                <div class="flex flex-col md:flex-row items-center text-center md:text-left gap-8">
+                    <!-- Album 1 Info -->
+                    <div class="flex-1 flex flex-col items-center md:items-start">
+                        <div class="w-24 h-24 mb-4">
+                           <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <defs> <filter id="glow-modal-1"> <feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur> <feMerge> <feMergeNode in="coloredBlur"></feMergeNode> <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge> </filter> </defs> <g class="crown-light-modal" filter="url(#glow-modal-1)"> <path d="M 20 80 L 25 40 L 40 55 L 50 30 L 60 55 L 75 40 L 80 80 Z" fill="none" stroke="#E9D5A1" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/> </g> </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white">王不亡</h2>
+                        <p class="text-lg text-gray-300 mt-1">Wang Bu-Wang</p>
+                        <p class="text-base text-gray-400 mt-3">一張探索存在、記憶與虛無的音樂專輯。透過聲音的紋理，我們試圖在縫隙中尋找家園，在廢鐵中看見夢想。</p>
                     </div>
-                     <!-- Text Info -->
-                    <div>
-                         <h1 class="text-4xl sm:text-5xl font-bold text-white flex items-center justify-center md:justify-start gap-x-3">
-                            王不亡
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a.75.75 0 00-1.06-1.06L9 10.94l-1.72-1.72a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l3.75-3.75z" clip-rule="evenodd" />
-                            </svg>
-                        </h1>
-                        <p class="text-xl sm:text-2xl text-gray-300 mt-1">Wang Bu-Wang</p>
-                        <p class="text-base sm:text-lg text-gray-300 mt-4">一張探索存在、記憶與虛無的音樂專輯。透過聲音的紋理，我們試圖在縫隙中尋找家園，在廢鐵中看見夢想。</p>
+                     <!-- Divider -->
+                    <div class="w-full md:w-px h-px md:h-48 bg-gray-700"></div>
+                     <!-- Album 2 Info -->
+                    <div class="flex-1 flex flex-col items-center md:items-start">
+                         <div class="w-24 h-24 mb-4">
+                            <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"> <defs> <linearGradient id="fireGradient" x1="0%" y1="0%" x2="0%" y2="100%"> <stop offset="0%" style="stop-color:#be9b7b; stop-opacity:1" /> <stop offset="100%" style="stop-color:#854442; stop-opacity:1" /> </linearGradient> <filter id="glow-modal-2"> <feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur> <feMerge> <feMergeNode in="coloredBlur"></feMergeNode> <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge> </filter> </defs> <g class="crown-light-modal" filter="url(#glow-modal-2)" fill="url(#fireGradient)"> <polygon points="40,30 50,50 30,50" /> <polygon points="50,20 60,30 40,30" /> <polygon points="60,30 70,50 50,50" /> <path d="M25 55 L 45 52 L 48 70 L 30 75 Z" /> <path d="M75 55 L 55 52 L 52 70 L 70 75 Z" /> </g> </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white">失序花園</h2>
+                        <p class="text-lg text-gray-300 mt-1">Disordered Garden</p>
+                        <p class="text-base text-gray-400 mt-3">一場關於秩序崩壞與野蠻生長的搖滾寓言。在燃燒的王國廢墟中，尋找狂亂的美感。</p>
                     </div>
                 </div>
             </div>
         </div>
-
     </main>
     
     <footer class="fixed bottom-1 w-full text-center text-gray-600 text-xs z-10 pointer-events-none">
@@ -168,11 +170,19 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const songs = [
-                { title: "王不亡", id: "6QqvzkZSwqUW23akhozgg6" }, { title: "地板知道", id: "7dVAbcs7Ny68KIClokYorj" },
-                { title: "縫隙家園", id: "2Q3U5eEMSHH9REaxG601dk" }, { title: "廢鐵猿", id: "76enWYcfd8knUKkDFi42ze" },
-                { title: "雪偏舟", id: "10hfnAE4WpkXfpIX4GVy2B" }, { title: "蝦花", id: "1gzwif6jTetRcm5CuxxIPY" },
-                { title: "我像嗎", id: "2g5Y3yIRRiSootIf9c9rKA" }, { title: "Let Light In", id: "4Ci4VGTxwRkHDnnPiyOShz" },
-                { title: "照完還是空", id: "5EsBs0AdGIhWFQTCswJ1pJ" }, { title: "王令開始", id: "4mRstoVpZnLJkweHPJRkbx" },
+                // Album 1
+                { title: "王不亡", id: "6QqvzkZSwqUW23akhozgg6", album: 1 }, { title: "地板知道", id: "7dVAbcs7Ny68KIClokYorj", album: 1 },
+                { title: "縫隙家園", id: "2Q3U5eEMSHH9REaxG601dk", album: 1 }, { title: "廢鐵猿", id: "76enWYcfd8knUKkDFi42ze", album: 1 },
+                { title: "雪偏舟", id: "10hfnAE4WpkXfpIX4GVy2B", album: 1 }, { title: "蝦花", id: "1gzwif6jTetRcm5CuxxIPY", album: 1 },
+                { title: "我像嗎", id: "2g5Y3yIRRiSootIf9c9rKA", album: 1 }, { title: "Let Light In", id: "4Ci4VGTxwRkHDnnPiyOShz", album: 1 },
+                { title: "照完還是空", id: "5EsBs0AdGIhWFQTCswJ1pJ", album: 1 }, { title: "王令開始", id: "4mRstoVpZnLJkweHPJRkbx", album: 1 },
+                // Album 2
+                { title: "草莓醬臨", id: "2vcbaA88s94ptvlT2lrR3i", album: 2 }, { title: "龍路大主辦", id: "5IsBZXkN3qpR1r2s6YgBx3", album: 2 },
+                { title: "八九乘法", id: "27GrIhOTB5GOvZzPUpQnPn", album: 2 }, { title: "總有一頭不見了", id: "3CY9qrRgDm8bjvWVE9ilMU", album: 2 },
+                { title: "早苗月之星", id: "0hN9kSd5NbY5cqDUI1GWqQ", album: 2 }, { title: "王瘋了", id: "4I6hIBCh9bL69RyEqi4sME", album: 2 },
+                { title: "懷裡的風暴", id: "1Jy1yvkDTes1yJBTKLDF4k", album: 2 }, { title: "尼卡巴卡", id: "0F7bQ0BAd2EqJhUC3RfXaq", album: 2 },
+                { title: "彎腰者", id: "2TNIPdXisHtUSP7QeTLlLq", album: 2 }, { title: "七月五日", id: "5KHrFUaoWa6KNSPnU5Y6oc", album: 2 },
+                { title: "末秒登車", id: "64KO0oE5VtNu9NO07AYeia", album: 2 }
             ];
 
             // --- UI 元素 ---
@@ -183,6 +193,8 @@
             const aboutBtn = document.getElementById('about-btn');
             const closeModalBtn = document.getElementById('close-modal-btn');
             const aboutModal = document.getElementById('about-modal');
+            const altarRing = document.getElementById('summon-altar-ring');
+            const backToHomeBtn = document.getElementById('back-to-home-button');
             
             // --- 狀態管理 ---
             let availableSongs = [...songs];
@@ -192,10 +204,10 @@
             // --- 音樂播放 ---
             function playSong(song) {
                 const card = document.createElement('div');
-                card.className = 'song-card rounded-lg shadow-2xl w-full max-w-sm p-4';
+                card.className = `song-card rounded-lg shadow-2xl w-full max-w-sm p-4 song-card-album${song.album}`;
                 card.style.transform = 'rotateY(180deg) scale(0.5)';
                 card.innerHTML = `
-                    <p class="text-2xl font-bold">${song.title}</p>
+                    <p class="text-2xl font-bold text-white">${song.title}</p>
                     <div class="mt-2 h-[80px] w-full">
                         <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0&autoplay=1" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                     </div>
@@ -203,10 +215,7 @@
                 nowPlayingArea.innerHTML = '';
                 nowPlayingArea.appendChild(card);
                 
-                // 卡牌翻轉動畫
-                setTimeout(() => {
-                    card.style.transform = 'rotateY(0deg) scale(1)';
-                }, 100);
+                setTimeout(() => { card.style.transform = 'rotateY(0deg) scale(1)'; }, 100);
             }
 
             // --- 召喚邏輯 ---
@@ -216,7 +225,7 @@
                 
                 if (availableSongs.length === 0) {
                      summonBtn.textContent = "再次召喚";
-                     availableSongs = [...songs]; // 重置卡池
+                     availableSongs = [...songs];
                      collection = [];
                      collectionGrid.innerHTML = '';
                 }
@@ -225,17 +234,21 @@
                 const summonedSong = availableSongs.splice(randomIndex, 1)[0];
                 collection.push(summonedSong);
                 
-                // 觸發動畫
                 document.getElementById('card-placeholder')?.remove();
                 main.classList.add('summoning');
-                triggerSummonEffect(); // 觸發背景特效
+
+                // 根據專輯改變特效顏色 (低飽和度)
+                const effectColor = summonedSong.album === 1 ? '#526082' : '#be9b7b';
+                altarRing.style.borderColor = effectColor;
+                altarRing.style.boxShadow = `0 0 20px ${effectColor}, inset 0 0 20px ${effectColor}`;
+                triggerSummonEffect(new THREE.Color(effectColor));
 
                 setTimeout(() => {
                     playSong(summonedSong);
                     updateCollection();
                     main.classList.remove('summoning');
                     isSummoning = false;
-                }, 1000); // 動畫持續時間
+                }, 1000);
             });
             
             // --- 更新收藏庫 UI ---
@@ -243,8 +256,8 @@
                 collectionGrid.innerHTML = '';
                 collection.forEach(song => {
                     const card = document.createElement('div');
-                    card.className = 'collection-card rounded p-2 text-center w-20 h-20 flex-shrink-0 flex flex-col justify-center cursor-pointer';
-                    card.innerHTML = `<p class="text-xs font-bold leading-tight">${song.title}</p>`;
+                    card.className = `collection-card rounded p-2 text-center w-20 h-20 flex-shrink-0 flex flex-col justify-center cursor-pointer collection-card-album${song.album}`;
+                    card.innerHTML = `<p class="text-xs font-bold leading-tight text-white">${song.title}</p>`;
                     card.addEventListener('click', () => playSong(song));
                     collectionGrid.appendChild(card);
                 });
@@ -267,6 +280,11 @@
                 }
             });
 
+            // --- 返回主頁邏輯 ---
+            backToHomeBtn.addEventListener('click', () => {
+                window.parent.postMessage('closeAlbumViewer', '*');
+            });
+
             // --- Three.js 背景 ---
             const bgContainer = document.getElementById('star-map-container');
             let scene, camera, renderer, particles, mouseX = 0, mouseY = 0, isMouseDown = false;
@@ -287,7 +305,6 @@
                 particles = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 1.5, color: 0xaaaaaa, transparent: true, opacity: 0.7 }));
                 scene.add(particles);
 
-                // 衝擊波
                 const shockwaveGeo = new THREE.RingGeometry(0.1, 1, 64);
                 const shockwaveMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0 });
                 shockwave = new THREE.Mesh(shockwaveGeo, shockwaveMat);
@@ -309,7 +326,8 @@
                 });
             }
 
-            function triggerSummonEffect() {
+            function triggerSummonEffect(color) {
+                shockwave.material.color = color;
                 shockwave.scale.set(1,1,1);
                 shockwave.material.opacity = 1;
             }
@@ -321,7 +339,6 @@
                 camera.lookAt(scene.position);
                 particles.rotation.y += 0.0002;
                 
-                // 衝擊波動畫
                 if (shockwave.material.opacity > 0) {
                     shockwave.scale.x *= 1.05;
                     shockwave.scale.y *= 1.05;
