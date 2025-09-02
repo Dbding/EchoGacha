@@ -58,9 +58,10 @@
         .song-card {
             transform-style: preserve-3d;
             transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative;
         }
-        .song-card-album1 { background: linear-gradient(45deg, #283149, #404b69); border: 1px solid #526082; }
-        .song-card-album2 { background: linear-gradient(45deg, #4b3832, #854442); border: 1px solid #be9b7b; }
+        .song-card-album1 { background: linear-gradient(45deg, #283149, #404b69); }
+        .song-card-album2 { background: linear-gradient(45deg, #4b3832, #854442); }
 
         .collection-card { transition: transform 0.2s ease; }
         .collection-card:hover { transform: scale(1.05); }
@@ -80,15 +81,47 @@
             0%, 100% { opacity: 0.7; transform: scale(0.95); }
             50% { opacity: 1; transform: scale(1.05); }
         }
+
+        /* 畫面震動特效 */
+        .summoning-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* 電流邊框特效 */
+        .electric-border {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            filter: url(#electric-filter);
+        }
+
+        .electric-border-album1 { --glow-color: #526082; }
+        .electric-border-album2 { --glow-color: #be9b7b; }
     </style>
 </head>
 <body class="antialiased">
+    <!-- SVG 濾鏡定義 (for electric border) -->
+    <svg class="absolute w-0 h-0">
+        <defs>
+            <filter id="electric-filter">
+                <feTurbulence id="turbulence-filter" type="fractalNoise" baseFrequency="0.01 0.03" numOctaves="3" result="turbulence" seed="0"></feTurbulence>
+                <feDisplacementMap id="displacement-map" in="SourceGraphic" in2="turbulence" scale="10" />
+            </filter>
+        </defs>
+    </svg>
 
     <!-- 背景 -->
     <div id="star-map-container"></div>
     
     <!-- 主要 UI -->
-    <main class="fixed inset-0 p-4 flex flex-col items-center justify-between h-full">
+    <main id="main-content" class="fixed inset-0 p-4 flex flex-col items-center justify-between h-full">
         
         <!-- 返回主頁按鈕 -->
         <button id="back-to-home-button"
@@ -189,12 +222,14 @@
             const nowPlayingArea = document.getElementById('now-playing-area');
             const summonBtn = document.getElementById('summon-btn');
             const collectionGrid = document.getElementById('collection-grid');
-            const main = document.querySelector('main');
+            const mainContent = document.getElementById('main-content');
             const aboutBtn = document.getElementById('about-btn');
             const closeModalBtn = document.getElementById('close-modal-btn');
             const aboutModal = document.getElementById('about-modal');
             const altarRing = document.getElementById('summon-altar-ring');
             const backToHomeBtn = document.getElementById('back-to-home-button');
+            const turbulenceFilter = document.getElementById('turbulence-filter');
+            const displacementMap = document.getElementById('displacement-map');
             
             // --- 狀態管理 ---
             let availableSongs = [...songs];
@@ -204,12 +239,17 @@
             // --- 音樂播放 ---
             function playSong(song) {
                 const card = document.createElement('div');
-                card.className = `song-card rounded-lg shadow-2xl w-full max-w-sm p-4 song-card-album${song.album}`;
+                card.className = `song-card rounded-lg shadow-2xl w-full max-w-sm song-card-album${song.album}`;
                 card.style.transform = 'rotateY(180deg) scale(0.5)';
                 card.innerHTML = `
-                    <p class="text-2xl font-bold text-white">${song.title}</p>
-                    <div class="mt-2 h-[80px] w-full">
-                        <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0&autoplay=1" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <div class="electric-border electric-border-album${song.album}">
+                        <div class="w-full h-full rounded-lg" style="box-shadow: inset 0 0 5px var(--glow-color), 0 0 10px var(--glow-color); border: 2px solid var(--glow-color);"></div>
+                    </div>
+                    <div class="relative z-10 p-4">
+                        <p class="text-2xl font-bold text-white">${song.title}</p>
+                        <div class="mt-2 h-[80px] w-full">
+                            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${song.id}?utm_source=generator&theme=0&autoplay=1" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        </div>
                     </div>
                 `;
                 nowPlayingArea.innerHTML = '';
@@ -235,18 +275,16 @@
                 collection.push(summonedSong);
                 
                 document.getElementById('card-placeholder')?.remove();
-                main.classList.add('summoning');
-
-                // 根據專輯改變特效顏色 (低飽和度)
+                
                 const effectColor = summonedSong.album === 1 ? '#526082' : '#be9b7b';
                 altarRing.style.borderColor = effectColor;
                 altarRing.style.boxShadow = `0 0 20px ${effectColor}, inset 0 0 20px ${effectColor}`;
+                
                 triggerSummonEffect(new THREE.Color(effectColor));
 
                 setTimeout(() => {
                     playSong(summonedSong);
                     updateCollection();
-                    main.classList.remove('summoning');
                     isSummoning = false;
                 }, 1000);
             });
@@ -288,7 +326,8 @@
             // --- Three.js 背景 ---
             const bgContainer = document.getElementById('star-map-container');
             let scene, camera, renderer, particles, mouseX = 0, mouseY = 0, isMouseDown = false;
-            let shockwave;
+            let shockwave, screenFlash, summonParticles, summonParticlesVelocities;
+            const PARTICLE_COUNT = 300;
             
             function initBg() {
                 scene = new THREE.Scene();
@@ -306,10 +345,27 @@
                 scene.add(particles);
 
                 const shockwaveGeo = new THREE.RingGeometry(0.1, 1, 64);
-                const shockwaveMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0 });
-                shockwave = new THREE.Mesh(shockwaveGeo, shockwaveMat);
+                shockwave = new THREE.Mesh(shockwaveGeo, new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0 }));
                 shockwave.lookAt(new THREE.Vector3(0,0,1));
                 scene.add(shockwave);
+                
+                const summonParticleGeo = new THREE.BufferGeometry();
+                const summonParticleVertices = [];
+                summonParticlesVelocities = [];
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    summonParticleVertices.push(0, 0, 1000);
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const speed = Math.random() * 40 + 20;
+                    summonParticlesVelocities.push(new THREE.Vector3(speed * Math.sin(phi) * Math.cos(theta), speed * Math.sin(phi) * Math.sin(theta), speed * Math.cos(phi)));
+                }
+                summonParticleGeo.setAttribute('position', new THREE.Float32BufferAttribute(summonParticleVertices, 3));
+                summonParticles = new THREE.Points(summonParticleGeo, new THREE.PointsMaterial({ size: 4, transparent: true, opacity: 0 }));
+                scene.add(summonParticles);
+
+                screenFlash = new THREE.Mesh(new THREE.PlaneGeometry(window.innerWidth * 2, window.innerHeight * 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 }));
+                screenFlash.position.z = 500;
+                scene.add(screenFlash);
 
                 bgContainer.addEventListener('pointerdown', () => { isMouseDown = true; });
                 bgContainer.addEventListener('pointerup', () => { isMouseDown = false; });
@@ -327,10 +383,50 @@
             }
 
             function triggerSummonEffect(color) {
+                mainContent.classList.add('summoning-shake');
+                setTimeout(() => mainContent.classList.remove('summoning-shake'), 500);
+
                 shockwave.material.color = color;
                 shockwave.scale.set(1,1,1);
                 shockwave.material.opacity = 1;
+
+                const positions = summonParticles.geometry.attributes.position.array;
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    positions[i * 3] = 0;
+                    positions[i * 3 + 1] = 0;
+                    positions[i * 3 + 2] = 0;
+                }
+                summonParticles.geometry.attributes.position.needsUpdate = true;
+                summonParticles.material.color = color;
+                summonParticles.material.opacity = 1;
+
+                screenFlash.material.opacity = 0.8;
             }
+            
+            let electricSeed = 0;
+            let electricState = 'calm';
+            let burstCounter = 0;
+
+            function animateElectricBorder() {
+                if (electricState === 'calm') {
+                    electricSeed += 0.02; // 沉穩模式下的緩慢流動
+                    displacementMap.setAttribute('scale', 5); // 更低的基礎幅度
+                    if (Math.random() < 0.015) { // 觸發暴電的機率
+                        electricState = 'burst';
+                        burstCounter = 10 + Math.floor(Math.random() * 10); // 暴電持續的影格數
+                    }
+                } else if (electricState === 'burst') {
+                    electricSeed += Math.random() * 5; // 快速變化的種子
+                    displacementMap.setAttribute('scale', 30 + Math.random() * 20); // 更離譜的幅度
+                    burstCounter--;
+                    if (burstCounter <= 0) {
+                        electricState = 'calm';
+                    }
+                }
+                turbulenceFilter.setAttribute('seed', electricSeed);
+                requestAnimationFrame(animateElectricBorder);
+            }
+
 
             function animateBg() {
                 requestAnimationFrame(animateBg);
@@ -340,9 +436,22 @@
                 particles.rotation.y += 0.0002;
                 
                 if (shockwave.material.opacity > 0) {
-                    shockwave.scale.x *= 1.05;
-                    shockwave.scale.y *= 1.05;
-                    shockwave.material.opacity -= 0.02;
+                    shockwave.scale.x *= 1.12;
+                    shockwave.scale.y *= 1.12;
+                    shockwave.material.opacity -= 0.04;
+                }
+                if (summonParticles.material.opacity > 0) {
+                    const positions = summonParticles.geometry.attributes.position.array;
+                    for (let i = 0; i < PARTICLE_COUNT; i++) {
+                        positions[i * 3] += summonParticlesVelocities[i].x;
+                        positions[i * 3 + 1] += summonParticlesVelocities[i].y;
+                        positions[i * 3 + 2] += summonParticlesVelocities[i].z;
+                    }
+                    summonParticles.geometry.attributes.position.needsUpdate = true;
+                    summonParticles.material.opacity -= 0.02;
+                }
+                if (screenFlash.material.opacity > 0) {
+                    screenFlash.material.opacity -= 0.08;
                 }
                 
                 renderer.render(scene, camera);
@@ -350,6 +459,7 @@
             
             initBg();
             animateBg();
+            animateElectricBorder();
         });
     </script>
 </body>
